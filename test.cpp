@@ -105,8 +105,9 @@ int main( void )
     glVertexAttribPointer( 0, 2, GL_FLOAT, GL_FALSE, sizeof( float ) * 2, 0 );
 
     /* Loop until the user closes the window */
-    while( !glfwWindowShouldClose( window ) )
-    {
+    while( !glfwWindowShouldClose( window ) ) {
+
+        positions[5] = 1 - positions[5];
         /* Render here */
         glClear( GL_COLOR_BUFFER_BIT );
 
@@ -117,6 +118,7 @@ int main( void )
 
         /* Poll for and process events */
         glfwPollEvents();
+        std::cout << "adasdf" << std::endl;
     }
 
     glfwTerminate();
