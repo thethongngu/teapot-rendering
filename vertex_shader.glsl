@@ -10,5 +10,5 @@ out vec3 out_vertex;
 
 void main() {
     gl_Position = projection * view * model * vec4(in_vertex, 1.0);
-    out_vertex = vec3(model * vec4(in_vertex, 1.0));
+    out_vertex = vec3(model * vec4(in_vertex))
 }
