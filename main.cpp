@@ -7,8 +7,8 @@
 #include <GLFW/glfw3.h>
 
 struct Point {
-    double x, y, z;
-    Point(double xx, double yy, double zz) {
+    float x, y, z;
+    Point(float xx, float yy, float zz) {
         x = xx;
         y = yy; 
         z = zz;
@@ -16,8 +16,8 @@ struct Point {
 };
 
 struct Face {
-    double x, y, z;
-    Face(double xx, double yy, double zz) {
+    float x, y, z;
+    Face(float xx, float yy, float zz) {
         x = xx;
         y = yy; 
         z = zz;
@@ -40,7 +40,7 @@ void load_obj() {
     while (!obj_file.eof()) {
         obj_file >> type;
         if (type == 'v') {
-            double x, y, z;
+            float x, y, z;
             obj_file >> x >> y >> z;
             vertices.push_back(Point(x, y, z));
 
@@ -54,7 +54,7 @@ void load_obj() {
     obj_file.close();
 }
 
-GLuint compile_shader(GLuint type, std::string path) {
+void compile_shader(GLuint type, std::string path, GLuint& shader_program) {
     GLuint shader_id = glCreateShader(type);
     std::ifstream file(path);
     std::string source((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
@@ -75,18 +75,18 @@ GLuint compile_shader(GLuint type, std::string path) {
         glDeleteShader(shader_id);
     }
 
-    GLuint shader_program = glCreateProgram();
     glAttachShader(shader_program, shader_id);
     glLinkProgram(shader_program);
     glValidateProgram(shader_program);
     glDeleteShader(shader_id);
-
-    return shader_program;
 }
 
 int main(void) {
     GLFWwindow* window;
     if (!glfwInit()) exit(EXIT_FAILURE);
+
+    glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 3 );
+    glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 3 );
 
     window = glfwCreateWindow(800, 600, "Project 01", NULL, NULL);
     if (!window) {
@@ -94,14 +94,19 @@ int main(void) {
         exit(EXIT_FAILURE);
     }
     glfwMakeContextCurrent(window);
-
-    GLuint my_shader = compile_shader();
-    glUseProgram(my_shader);
+    glewInit();
+    
+    GLuint shader_program = glCreateProgram();
+    compile_shader(GL_VERTEX_SHADER, "vertex_shader.glsl", shader_program);
+    compile_shader(GL_FRAGMENT_SHADER, "fragment_shader.glsl", shader_program);
+    glUseProgram(shader_program);
 
     GLuint buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, 3 * size(double), )
+    glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(float), &vertices[0], GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
 
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
