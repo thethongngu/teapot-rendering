@@ -27,8 +27,8 @@ struct Face {
     }
 };
 
-std::vector<Point> vertices;
-std::vector<Face> faces;
+std::vector<float> vertices;
+std::vector<unsigned int> faces;
 
 void load_obj() {
     std::ifstream obj_file;
@@ -45,12 +45,16 @@ void load_obj() {
         if (type == 'v') {
             float x, y, z;
             obj_file >> x >> y >> z;
-            vertices.push_back(Point(x, y, z));
+            vertices.push_back(x);
+            vertices.push_back(y);
+            vertices.push_back(z);
 
         } else {
-            int x, y, z;
+            unsigned int x, y, z;
             obj_file >> x >> y >> z;
-            faces.push_back(Face(x - 1, y - 1, z - 1));
+            faces.push_back(x - 1);
+            faces.push_back(y - 1);
+            faces.push_back(z - 1);
         }
     }
 
@@ -98,11 +102,9 @@ int main(void) {
     }
     glfwMakeContextCurrent(window);
     glewInit();
-
-    GLuint vao = 0;
-    glCreateVertexArrays( 1, &vao );
-    glBindVertexArray( vao );
     
+    load_obj();
+
     GLuint shader_program = glCreateProgram();
     compile_shader(GL_VERTEX_SHADER, "vertex_shader.glsl", shader_program);
     compile_shader(GL_FRAGMENT_SHADER, "fragment_shader.glsl", shader_program);
@@ -111,32 +113,46 @@ int main(void) {
     GLint model_shader = glGetUniformLocation(shader_program, "model");
     GLint view_shader = glGetUniformLocation(shader_program, "view");
     GLint projection_shader = glGetUniformLocation(shader_program, "projection");
+    GLint rotation_axis_shader = glGetUniformLocation(shader_program, "rotation_axis");
+    GLint rotation_angle_shader = glGetUniformLocation(shader_program, "rotation_angle");
 
-    glm::mat4 model = glm::mat4(1.0f);
-    glm::mat4 view = glm::lookAt(glm::vec3(4,3,3),  glm::vec3(0,0,0), glm::vec3(0,1,0));
-    glm::mat4 projection = glm::perspective(glm::radians(60.0f), 4.0f / 3.0f, 0.1f, 100.0f);
-
-    glUniformMatrix4fv(model_shader, 1, GL_FALSE, &model[0][0]);
-    glUniformMatrix4fv(view_shader, 1, GL_FALSE, &view[0][0]);
-    glUniformMatrix4fv(projection_shader, 1, GL_FALSE, &projection[0][0]);
-
-    float positions[ 6 ] = {
-        -0.5f, -0.5f,
-         0.5f, -0.5f,
-         -1.0f,  1.0f,
-    };
+    GLuint vao = 0;
+    glCreateVertexArrays(1, &vao);
+    glBindVertexArray(vao);
 
     GLuint buffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
-    glBufferData(GL_ARRAY_BUFFER, 6 * sizeof(float), &positions[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(float), &vertices[0], GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 2, 0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 3, 0);
+
+    GLuint index;
+    glGenBuffers(1, &index);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, faces.size() * sizeof(GLuint), &faces[0], GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index);
+
+    // glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(4, 0, 0));
+    glm::mat4 model = glm::mat4(1.0f);
+    glm::mat4 view = glm::lookAt(glm::vec3(8, 8, 12),  glm::vec3(0,0,0), glm::vec3(0,1,0));
+    glm::mat4 projection = glm::perspective(glm::radians(60.0f), 4.0f / 3.0f, 0.1f, 100.0f);    
+    float rotation_angle = 0;
+    glm::vec3 rotation_axis(0, 0, 1);
 
     while (!glfwWindowShouldClose(window)) {
         glClear(GL_COLOR_BUFFER_BIT);
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        rotation_angle = fmod((rotation_angle + 1), 360.0);
+
+        glUniformMatrix4fv(model_shader, 1, GL_FALSE, &model[0][0]);
+        glUniformMatrix4fv(view_shader, 1, GL_FALSE, &view[0][0]);
+        glUniformMatrix4fv(projection_shader, 1, GL_FALSE, &projection[0][0]);
+        glUniform1fv(rotation_angle_shader, 1, &rotation_angle);
+        glUniform3fv(rotation_axis_shader, 1, &rotation_axis[0]);
+
+        glDrawElements(GL_TRIANGLES, faces.size(), GL_UNSIGNED_INT, 0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
