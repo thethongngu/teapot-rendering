@@ -116,9 +116,9 @@ int main(void) {
     GLint rotation_axis_shader = glGetUniformLocation(shader_program, "rotation_axis");
     GLint rotation_angle_shader = glGetUniformLocation(shader_program, "rotation_angle");
 
-    GLuint vao = 0;
-    glCreateVertexArrays(1, &vao);
-    glBindVertexArray(vao);
+    // GLuint vao = 0;
+    // glCreateVertexArrays(1, &vao);
+    // glBindVertexArray(vao);
 
     GLuint buffer;
     glGenBuffers(1, &buffer);
